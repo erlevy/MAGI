@@ -139,7 +139,10 @@ sub diffexpression {
 		$R->run(q'sizeFactors(cds) <- col_sum[index-1]/10000');
 		
 		# differential expression
-		$R->run(q'cds <- estimateVarianceFunctions(cds)');
+		#$R->run(q'cds <- estimateVarianceFunctions(cds)');
+                # the function estimateVarianceFunctions had been removed in DESeq 1.8.3 compiled for R 2.15.1
+                #    use  estimateDispersions function instead as below 
+                $R->run(q'cds <- estimateDispersions(cds)');
 		
 		# g2 over g1
 		$R->run(q'res <- nbinomTest(cds, group1[1], group2[1])[,1:8]');
