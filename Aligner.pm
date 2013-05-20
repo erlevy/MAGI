@@ -23,7 +23,8 @@ my @suffix = (".fasta", ".fa", ".rc", ".sam", ".map");
 # input: path to FASTA-formatted file, path to basename of Bowtie 2 index, path to output file, number of mismatches, Bowtie 2 parameter
 # output: system call error code or 1
 sub align {
-	my $res = system("bowtie2 --gbar 32 -f $_[4] -N $_[3] -x $_[1] $_[0] -S $_[2] 2>/dev/null");
+	#my $res = system("bowtie2 --gbar 32 -f $_[4] -N $_[3] -x $_[1] $_[0] -S $_[2] 2>/dev/null");
+	my $res = system("bowtie2 --gbar 32 -f $_[0] -N $_[3] -x $_[1] $_[4] -S $_[2] 2>/dev/null");
 	$res == 0 ? return 1 : return $res;
 }
 ##############################

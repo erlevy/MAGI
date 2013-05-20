@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/isr/bin/ierl
 #03/29/2012
 #Author: Petra Stepanowsky
 
@@ -322,6 +322,10 @@ sub novelprediction {
 		
 		close STR;
 		close NOVEL;
+
+		# added next 3 lines to split a big file to many small chunks to fit in GPU device memory
+		my $split_prefix = $output_dir."novel.fa.split.";
+		return( system("split -l 800 -a 1 -d ".$output_dir."novel.fa ".$split_prefix) == 0 );
 	}
 	return 1;
 }
@@ -363,6 +367,9 @@ sub run_classification {
 		return "Classifier method $classifier_type is not supported!\n";
 	}
 	
+	# added this line due to memory limitation of GPU device, M2090
+	# $R->run(q'probs <- sort(probs, decreasing=T)[1:min(length(probs), 400)]');
+
 	$R->run(q'write.table(as.data.frame(probs), file=result_file, sep="\t", quote=FALSE, col.names=FALSE)');
 
 	$R->stop();

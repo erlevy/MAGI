@@ -58,6 +58,10 @@ sub create_aln_file {
 				my $seq = <REF>;
 				$seq  =~ tr/[\r\n]//d; # remove \n and \r characters
 				$refs{$ref} = $seq;
+
+				# print for error checking
+				#print "REF=".$ref."\tSEQ=".$refs{$ref}."\n";
+
 			}
 		}
 		# close reference file handler
@@ -122,6 +126,10 @@ sub create_aln_file {
 		
 		foreach my $ref (sort keys %mapped) {
 			open(OUT, ">", $output_dir."precursor_aln/".$ref.".aln") or return "Cannot open $ref.aln!\n";
+
+			# print for error checking
+			# print "REF=".$ref."\tSEQ=".$refs{$ref}."\n";
+
 			print OUT ">".$ref."\t".$refs{$ref}."\n";	
 			foreach my $basename (sort keys %{$mapped{$ref}}) {				
 				foreach my $start (sort {$a <=> $b} keys %{$mapped{$ref}{$basename}}) {

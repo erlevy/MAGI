@@ -57,6 +57,7 @@ sub diffexpression {
 		
 		# load DESeq library
 		$R->run(q'library(DESeq)');
+
 		
 		#################
 		# generate vector with group labels according to number of samples
@@ -157,6 +158,7 @@ sub diffexpression {
 		$R->run(q'write.table(res, result_file_g1_over_g2, row.names=F, col.names=T, sep="\t", quote=F)');
 				
 		$R->stop();
+
 		return 1;
 	} else {
 		return "Differential expression with less than 2 samples per group is not possible!\n";

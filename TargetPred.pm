@@ -29,12 +29,22 @@ sub targetprediction {
 	my $gpu = $_[5];
 	my $rbs = $_[6];
 	my $number_gpus = $_[7];
+	my $max4gpu = 900;
 	
 	my $res = 0;
 	if (-s $input_file) {
 		if ($gpu eq "yes") {
 			# CUDA-miRanda
-			$res = system("$exe_dir/CUDAMiranda $input_file $reference -sc $score -quiet -out $output_file -keyval -nGPUs $number_gpus -rbs $rbs -trim 30000");
+			#$res = system("$exe_dir/CUDAMiranda $input_file $reference -sc $score -quiet -out $output_file -keyval -nGPUs $number_gpus -rbs $rbs -trim 30000");
+			my $total = get_total_lines($input_file); 
+			my $number_splitfiles = ($total - ($total % $max4gpu) ) / $max4gpu + 1;
+
+			for(my $i=0; $i<$number_splitfiles; $i++) {
+				$res = system("$exe_dir/CUDAMiranda $input_file.split.$i $reference -sc $score -quiet -out $output_file.split.$i -keyval -nGPUs $number_gpus -rbs $rbs -trim 30000");
+			}
+
+			$res = system("cat $output_file.split.* >> $output_file");
+
 		} else {
 			# miRanda
 			$res = system("$exe_dir/miranda $input_file $reference -sc $score -quiet -out $output_file -keyval");
@@ -42,6 +52,18 @@ sub targetprediction {
 	}
 	
 	$res == 0 ? return 1 : return $res;
+}
+
+# get the total line number of a file
+sub get_total_lines{
+	my $filename = $_[0];
+	my $cnt = 0;
+
+	open(FH, "<", $filename) or die "Cannot open a file $filename. $!";
+	$cnt++ while <FH>;
+	close FH;
+
+	return $cnt; 
 }
 
 #loaded ok				

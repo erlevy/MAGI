@@ -86,7 +86,7 @@ get_input_files();
 if (scalar(@input_files) > 0) {
 	
 	print "-----------------------------------\n";
-	print "----- MiRAMAR analysis started -----\n";
+	print "----- MAGI analysis started -----\n";
 	print "-----------------------------------\n";
 
 	print "..... check database files: ";
@@ -264,26 +264,31 @@ if (scalar(@input_files) > 0) {
 	}
 #####
 		
-##### split combined files #####
+##### split combined known files #####
 	print "..... split combined files: ";
 	push (@combined_filter_map_files, $combined_genome_map_file[0]);
 	push (@combined_filter_unmap_files, $combined_genome_unmap_file);
+
+	# Novel results are survived (have been filtered)
+	my $combined_novel_survived_file = $dir_combined."novel/mapped/combined_genome_posNovel.map";
+
 	if (scalar(@rc_files) == 1)	 {
 		# copy combined files (mapped, unmapped and survived) and change basename to input file basename
 		copy_files($rc_files[0], $combined_basename, \@combined_filter_map_files, \@combined_filter_unmap_files, \@known_mapped_files, 
-					\@known_unmapped_files, $combined_mature_survived_file, $combined_genome_survived_file);
+					\@known_unmapped_files, $combined_mature_survived_file, $combined_novel_survived_file, $combined_genome_survived_file);
 	} else {
 		# split combined files to input files using the mapping file
 		split_files($read_mapping_file, \@combined_filter_map_files, \@combined_filter_unmap_files, \@known_mapped_files, 
-					\@known_unmapped_files, $combined_mature_survived_file, $combined_genome_survived_file);
+					\@known_unmapped_files, $combined_mature_survived_file, $combined_novel_survived_file, $combined_genome_survived_file);
 	}
 	print "done\n";
 #####
 
+	my $aggregate_known_file;
 	if ($config->getProperty("detect_known") eq "yes") {
 		print "..... aggregate known microRNAs: ";
 		check_status(aggregate_files(get_files_from_dir($output_dir."known/survived/", ".map"), $dir_combined."mapped/mature_list.txt", $output_dir."known/", "known"));
-		my $aggregate_known_file = $output_dir."known/known_aggregate.bound";
+		$aggregate_known_file = $output_dir."known/known_aggregate.bound";
 
 ##### diff. expr. for known microRNAs #####
 		print "..... differential expression for known microRNAs:";
@@ -306,9 +311,8 @@ if (scalar(@input_files) > 0) {
 					$groups[$i] = $all_groups[$i];
 				}
 				print "\n     \t$groups[0] vs. $groups[1]: ";
-				$res = 
-				check_status(DiffExpr::diffexpression($aggregate_known_file, $output_dir."known/diff_expr/", \%group_names, \@groups, \@samples));
-			
+				$res = check_status(DiffExpr::diffexpression($aggregate_known_file, $output_dir."known/diff_expr/", \%group_names, \@groups, \@samples));
+
 			} elsif (scalar(@all_groups) == 3) {
 				# diff expression between group1 and group2
 				$samples[0] = $group_names{$all_groups[0]};
@@ -339,16 +343,64 @@ if (scalar(@input_files) > 0) {
 	}
 
 	if ($config->getProperty("predict_novel") eq "yes") {
-		#print "..... aggregate novel microRNAs: ";
-		#check_status(aggregate_files());
+		print "..... aggregate novel microRNAs: ";
+		check_status(aggregate_files(get_files_from_dir($output_dir."novel/survived/", ".map"), $dir_combined."novel/mapped/posNovel_list.txt", $output_dir."novel/", "novel"));
 		
-		#my $aggregate_novel_file = $output_dir."novel/novel_aggregate.bound";
+		my $aggregate_novel_file = $output_dir."novel/novel_aggregate.bound";
+		my $aggregate_all_file = $output_dir."combined/combined_aggregate.bound";
+
+		combine_aggregate($aggregate_known_file, $aggregate_novel_file, $aggregate_all_file);
 		
 ##### diff. expr. for novel microRNAs #####
-		print "..... differential expression for novel microRNAs: ";
+		print "..... differential expression for novel microRNAs: \n";
 		if($config->getProperty("diff_expr_novel") eq "yes") {
-			#DiffExpr::diffexpression( , $output_dir."novel/diff_expr/", , "novel");
-			print "done\n";
+			my %group_names = ();
+			
+			foreach my $file (@rc_files) {
+				my $basename = fileparse($file, (".rc", ".fasta", ".fa"));
+				$basename =~ /(\w+?)\_/;
+				$group_names{$1}++;
+			}
+			my @all_groups = sort keys %group_names;
+			
+			my @samples = ();
+			my @groups = ();
+			
+			if (scalar(@all_groups) == 2) {
+				foreach (my $i = 0; $i < scalar(@all_groups); $i++) {
+					$samples[$i] = $group_names{$all_groups[$i]};
+					$groups[$i] = $all_groups[$i];
+				}
+				print "     \t$groups[0] vs. $groups[1]: ";
+				print $res = DiffExpr::diffexpression($aggregate_all_file, $output_dir."combined/diff_expr/", \%group_names, \@groups, \@samples)."\n";
+			
+				separate_novel_diff_ex($output_dir."combined/diff_expr/", $output_dir."novel/diff_expr/")
+
+			} elsif (scalar(@all_groups) == 3) {
+				# diff expression between group1 and group2
+				$samples[0] = $group_names{$all_groups[0]};
+				$groups[0] = $all_groups[0];
+				$samples[1] = $group_names{$all_groups[1]};
+				$groups[1] = $all_groups[1];
+				print "     \t$groups[0] vs. $groups[1]: ";
+				print DiffExpr::diffexpression($aggregate_all_file, $output_dir."combined/diff_expr/", \%group_names, \@groups, \@samples)."\n";
+			
+				# diff ecpression between group1 and group3
+				$samples[1] = $group_names{$all_groups[2]};
+				$groups[1] = $all_groups[2];
+				print "     \t$groups[0] vs. $groups[1]: ";
+				print DiffExpr::diffexpression($aggregate_all_file, $output_dir."combined/diff_expr/", \%group_names, \@groups, \@samples)."\n";
+			
+				# diff expression between group2 and group3
+				$samples[0] = $group_names{$all_groups[1]};
+				$groups[0] = $all_groups[1];
+				print "     \t$groups[0] vs. $groups[1]: ";
+				print DiffExpr::diffexpression($aggregate_novel_file, $output_dir."combined/diff_expr/", \%group_names, \@groups, \@samples)."\n";
+
+				separate_novel_diff_ex($output_dir."combined/diff_expr/", $output_dir."novel/diff_expr/")
+			} else {
+				print "Differential expression only possible for 2 or 3 groups!\n";
+			}
 		} else {
 			print "N/A\n";
 		}
@@ -362,7 +414,7 @@ if (scalar(@input_files) > 0) {
 #####
 
 	print "------------------------------------\n";
-	print "----- MiRAMAR analysis finished -----\n";
+	print "------ MAGI analysis finished ------\n";
 	print "------------------------------------\n";
 } else {
 	print "No input files found!\n";
@@ -467,6 +519,67 @@ sub aggregate_files {
 }
 ##############################
 
+
+sub combine_aggregate {
+	my $known_aggregate = $_[0];
+	my $novel_aggregate = $_[1];
+	my $out_file = $_[2];
+	
+	open(IN, "<", $known_aggregate) or return "Cannot open $known_aggregate!\n";
+	open(OUT, ">", $out_file);
+	my $line = <IN>;
+	print OUT $line;
+	while (<IN>) {
+		$line = $_;
+		print OUT $line;
+	}
+	close IN;
+
+	open(IN, "<", $novel_aggregate) or return "Cannot open $novel_aggregate\n";
+	while (<IN>) {
+		$line = $_;
+		print OUT $line unless $. == 1;
+	}
+	close IN;
+	close OUT;
+}
+
+sub separate_novel_diff_ex {
+	my $combined_diff_expr_dir = $_[0];
+	my $out_dir = $_[1];
+	
+	print "..... Splitting novel differential expression: \n";
+	
+	opendir (DIR, $combined_diff_expr_dir) or return "Cannot open $combined_diff_expr_dir!\n";
+	my @dir_files = readdir(DIR);
+	closedir(DIR);
+
+	create_directory($out_dir);
+
+
+	my @files = grep(/\.txt/, @dir_files);
+
+	foreach my $file (@files) {
+		print "\t".basename($file)."\n";
+
+		open(IN, "<", $combined_diff_expr_dir.$file) or return "Cannot open ".$file."!\n";
+		open(OUT, ">", $out_dir.basename($file)) or die "Couldn't open ".$out_dir.basename($file)."!\n";
+
+		my $line = <IN>;
+		print OUT $line;
+		while (<IN>) {
+			$line = $_;
+			if ($line =~ /^novel/) {
+				print OUT $line;
+			}
+		}
+		close IN;
+		close OUT;
+	}
+	print "\tdone.\n";
+}
+
+
 ##############################
 # checks the existence of a given database name
 # input: path of directory, database name
@@ -533,7 +646,7 @@ sub check_status {
 	my $res = $_[0];
 	if ($res eq 1) {
 		print "done\n";
-	} elsif ($res ne "fastq" && $res ne "rc" && $res !~ /Differential expression/) {
+	} elsif ($res ne "fastq" && $res ne "rc") {
 		print $res; 
 		quit();
 	}
@@ -628,11 +741,13 @@ sub copy_files {
 	my @known_files_map = @{$_[4]};
 	my @known_files_unmap = @{$_[5]};
 	my $survived_known_file = $_[6];
-	my $survived_filter_file = $_[7];
+	my $survived_novel_file = $_[7];
+	my $survived_filter_file = $_[8];
 	#################
 	
 	my $dir_filtered = $output_dir."filtered/";
 	my $dir_known = $output_dir."known/";
+	my $dir_novel = $output_dir."novel/";
 	
 	#################
 	#create directories
@@ -647,6 +762,10 @@ sub copy_files {
 		create_directory($dir_known."mapped/");
 		create_directory($dir_known."unmapped/");
 		create_directory($dir_known."survived/");
+	}
+	if ($survived_novel_file ne "") {
+		create_directory($dir_novel);
+		create_directory($dir_novel."survived/");
 	}
 	#################
 
@@ -672,6 +791,10 @@ sub copy_files {
 	if ($survived_known_file ne "") {
 		(my $tmp_file_name = fileparse($survived_known_file)) =~ s/$combined_basename/$basename_rc_file/;
 		copy($survived_known_file, $output_dir."known/survived/".$tmp_file_name) or check_status("Cannot copy $survived_known_file to ${output_dir}known/survived/$tmp_file_name!\n");
+	}
+	if ($survived_novel_file ne "") {
+		(my $tmp_file_name = fileparse($survived_novel_file)) =~ s/$combined_basename/$basename_rc_file/;
+		copy($survived_novel_file, $output_dir."novel/survived/".$tmp_file_name) or check_status("Cannot copy $survived_novel_file to ${output_dir}novel/survived/$tmp_file_name!\n");
 	}
 	if ($survived_filter_file ne "") {
 		(my $tmp_file_name = fileparse($survived_filter_file)) =~ s/$combined_basename/$basename_rc_file/;
@@ -906,11 +1029,13 @@ sub split_files {
 	my @known_files_map = @{$_[3]};
 	my @known_files_unmap = @{$_[4]};
 	my $survived_known_file = $_[5];
-	my $survived_filter_file = $_[6];
+	my $survived_novel_file = $_[6];
+	my $survived_filter_file = $_[7];
 	#################
 	
 	my $dir_filtered = $output_dir."filtered/";
 	my $dir_known = $output_dir."known/";
+	my $dir_novel = $output_dir."novel/";
 	
 	#################
 	# create directories
@@ -925,6 +1050,10 @@ sub split_files {
 		create_directory($dir_known."mapped/");
 		create_directory($dir_known."unmapped/");
 		create_directory($dir_known."survived/");
+	}
+	if ($survived_novel_file ne "") {
+		create_directory($dir_novel);
+		create_directory($dir_novel."survived/");
 	}
 	#################
 	
@@ -972,10 +1101,17 @@ sub split_files {
 		my $hash_seq = read_file_split_files($file);
 		write_split_files($dir_known."unmapped/", \@basenames, get_pattern_split_files($file, ".rc"), \%hash_combine, $hash_seq, ".rc");
 	}
+
 	if ($survived_known_file ne "") {
 		my $hash_seq = read_file_split_files($survived_known_file);
 		write_split_files($dir_known."survived/", \@basenames, "", \%hash_combine, $hash_seq, ".map");
 	}
+
+	if ($survived_novel_file ne "") {
+		my $hash_seq = read_file_split_files($survived_novel_file);
+		write_split_files($dir_novel."survived/", \@basenames, "", \%hash_combine, $hash_seq, ".map");
+	}
+
 	if ($survived_filter_file ne "") {
 		my $hash_seq = read_file_split_files($survived_filter_file);
 		write_split_files($dir_filtered."survived/", \@basenames, "_genome", \%hash_combine, $hash_seq, ".map");
