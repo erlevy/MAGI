@@ -154,14 +154,14 @@ sub diffexpression {
 		$R->run(q'res <- nbinomTest(cds, group1[1], group2[1])[,1:8]');
 		$R->run(q'res[,2:8] <- round(res[,2:8], 7)');
 		$R->run(q'colnames(res)[3:5] <- c(paste("group_", group1[1], "_mean", sep=""), paste("group_", group2[1], "_mean", sep=""), paste("FC_", group2[1], "_over_", group1[1], sep=""))');
-		$R->run(q'res[do.call(cbind,lapply(res,is.nan))] <- 0')
+		$R->run(q'res[do.call(cbind,lapply(res,is.nan))] <- 0');
 		$R->run(q'write.table(res, result_file_g2_over_g1, row.names=F, col.names=T, sep="\t", quote=F)');
 		
 		# g1 over g2
 		$R->run(q'res <- nbinomTest(cds, group2[1], group1[1])[,1:8]');
 		$R->run(q'res[,2:8] <- round(res[,2:8], 7)');
 		$R->run(q'colnames(res)[3:5] <- c(paste("group_", group2[1], "_mean", sep=""), paste("group_", group1[1], "_mean", sep=""), paste("FC_", group1[1], "_over_", group2[1], sep=""))');
-		$R->run(q'res[do.call(cbind,lapply(res,is.nan))] <- 0')
+		$R->run(q'res[do.call(cbind,lapply(res,is.nan))] <- 0');
 		$R->run(q'write.table(res, result_file_g1_over_g2, row.names=F, col.names=T, sep="\t", quote=F)');
 				
 		$R->stop();
