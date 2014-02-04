@@ -346,7 +346,7 @@ sub pathwayenrichment {
 	{
 		my $current_table = $_;
 		@$current_table[1] = scalar (@targets) - @$current_table[0];
-		@$current_table[3] = 4448 - scalar (@targets) - @$current_table[2];
+		@$current_table[3] = 4957 - scalar (@targets) - @$current_table[2];
 	}
 
 	my $n5 = 0;
