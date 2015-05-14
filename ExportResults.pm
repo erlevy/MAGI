@@ -14,7 +14,6 @@ use File::Copy;
 use Cwd;
 
 sub exportresults {
-
 	#################
 	# save input parameters
 	# an existing output directory
@@ -38,7 +37,6 @@ sub exportresults {
 	my $dir_output_novel = $dir_output."novel/";
 	my $dir_output_target = $dir_output."target/";
 	#################
-
 	create_directory($dir_output);
 	
 	if (-d $dir_rc) {
@@ -56,22 +54,20 @@ sub exportresults {
 	if (-d $dir_visualization_known) {
 		dircopy($dir_visualization_known, $dir_output_known) or return "Cannot copy quality files!\n";
 	}
-
 	if (-d $dir_visualization_novel) {
 		dircopy($dir_visualization_novel, $dir_output_novel) or return "Cannot copy quality files!\n";
 	}
-
 	if (-d $dir_visualization_target) {
 		create_directory($dir_output_target);
 		copy($dir_visualization_target."novel_vs_genes.txt", $dir_output_target."novel_vs_genes.txt") or return "Cannot copy novel.fa!\n";
 	}
-
 	if (-d $dir."combined/") {
 		create_directory($dir_output."combined/");
 		dircopy($dir."combined/alignment/", $dir_output."combined/alignment/") or return "Cannot copy quality files!\n";
 		dircopy($dir."combined/mapped/", $dir_output."combined/mapped/") or return "Cannot copy quality files!\n";
-		copy($dir."combined/combined_aggregate.bound", $dir_output."combined/combined_aggregate.bound") or return "Cannot copy novel.fa!\n";
-
+		if (-e $dir."combined/combined_aggregate.bound"){	
+			copy($dir."combined/combined_aggregate.bound", $dir_output."combined/combined_aggregate.bound") or return "Cannot copy novel.fa!\n";
+		}	
 		if (-d $dir."combined/novel/") {
 			create_directory($dir_output."combined/novel/");
 			copy($dir."combined/novel/novel.fa", $dir_output."combined/novel/novel.fa") or return "Cannot copy novel.fa!\n";
@@ -79,7 +75,6 @@ sub exportresults {
 			copy($dir."combined/novel/probs_precursors.txt", $dir_output."combined/novel/probs_precursors.txt") or return "Cannot copy novel.fa!\n";
 		}
 	}
-
 	my $old_directory = cwd;
 	chdir("$dir") or die "can't change directory";
 	my $res = system("zip -r output.zip"." output/");
