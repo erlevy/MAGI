@@ -1,0 +1,14 @@
+# INPUT:
+# $1: output directory
+
+#perl target_processing_new.pl $1
+
+#perl pathway_enrich_input.pl $1
+
+#perl pathway_enrich_build.pl $1
+
+#perl target_processing_new.pl /Users/Eric/Dropbox/mirna/enviro/run/
+
+#perl pathway_enrich_input.pl /Users/Eric/Dropbox/mirna/enviro/run/
+
+perl pathway_enrich_final.pl /home/elevy/pathway_final/run/ /home/elevy/pathway_final/data/

@@ -493,18 +493,6 @@ sub prepareresults {
 	################
 	if (-d $dir."combined/novel/") {
 		$res = create_directory($dir_final_novel); return $res if ($res ne 1);
-		
-		
-		### ADDED FOR CREATING NOVEL PILEUP CHART ###
-		my $file_novel_precursors = $dir."combined/novel/novel.fa";
-		my @precursors_mapped = ();
-		if (-d $dir."novel/survived/") 
-		{
-			push (@precursors_mapped, @{get_files_from_dir($dir."novel/survived/", '.map')});
-		}
-		$res = create_aln_file(\@precursors_mapped, $dir_final_novel, $file_novel_precursors); return $res if ($res ne 1);
-		### ADDED FOR CREATING NOVEL PILEUP CHART ###
-	
 	
 		my $novel_output_file = $dir_final_novel."precursors.str";
 		create_novel_result($dir."combined/novel/precursors.str", $novel_output_file);

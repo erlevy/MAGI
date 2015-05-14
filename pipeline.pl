@@ -17,6 +17,8 @@ use NovelPred;
 use TargetPred;
 use DiffExpr;
 use PrepareResult;
+use PathwayEnrichment;
+use ExportResults;
 
 my $usage = << "USAGE";
 Description: 
@@ -84,7 +86,7 @@ get_input_files();
 
 ##############################
 if (scalar(@input_files) > 0) {
-	
+	print "Path: ".cwd()."\n";
 	print "-----------------------------------\n";
 	print "----- MAGI analysis started -----\n";
 	print "-----------------------------------\n";
@@ -159,10 +161,19 @@ if (scalar(@input_files) > 0) {
 	my @combined_filter_map_files = ();
 	my @combined_filter_unmap_files = ();
 	if ($config->getProperty("filter_reads") eq "yes") {
-		# get all possible filter criteria
+		# get original filter criteria and directory names
 		opendir (DIR, $path_species."exclusioncriteria") or check_status("Cannot open species directory: $path_species\n");
-		# get directory names of all filter criteria
 		my @filter_dirs = readdir(DIR);
+		
+		# add extra exclusion criteria if directory exists in output_dir
+		if (-d $output_dir."exclusion") {
+			opendir (DIR2, $output_dir."exclusion") or check_status("Cannot open species directory: $output_dir\n");
+			push (@filter_dirs, readdir(DIR2));
+			my $res = system("bowtie2-build $output_dir"."exclusion/xclusionRNA/xclusionRNA.fa $output_dir"."exclusion/xclusionRNA/xclusionRNA");
+			$file_indexes{"xclusionRNA"} = $output_dir."exclusion/xclusionRNA/xclusionRNA";
+			closedir (DIR2);
+		}
+		
 		# loop over each filter criteria
 		print "\n";
 		foreach my $dir_filter_name (@filter_dirs) {
@@ -170,8 +181,14 @@ if (scalar(@input_files) > 0) {
 				print "     \t".$dir_filter_name.": ";
 				# if there is a known index of the certain criteria available, align to filter sequences (information collected by testing databases)
 				if (exists $file_indexes{$dir_filter_name}) {
-					my $res = Aligner::map(\@combined_genome_map_file, $file_indexes{$dir_filter_name}, $dir_filter_name, $dir_combined, $config->getProperty($dir_filter_name."_mismatches"), "--norc");
-					check_status($res);
+					if ($dir_filter_name ne "xclusionRNA") {
+						my $res = Aligner::map(\@combined_genome_map_file, $file_indexes{$dir_filter_name}, $dir_filter_name, $dir_combined, $config->getProperty($dir_filter_name."_mismatches"), "--norc");
+						check_status($res);
+					} else {
+						my $res = Aligner::map(\@combined_genome_map_file, $file_indexes{$dir_filter_name}, $dir_filter_name, $dir_combined, "1", "--norc");
+						check_status($res);					
+					}
+					
 					# save file name information to know filter mapping files
 					push (@combined_filter_map_files, $dir_combined."mapped/".$combined_basename."_genome_".$dir_filter_name.".map");
 					push (@combined_filter_unmap_files, $dir_combined."unmapped/".$combined_basename."_genome_".$dir_filter_name.".rc");
@@ -268,18 +285,29 @@ if (scalar(@input_files) > 0) {
 	print "..... split combined files: ";
 	push (@combined_filter_map_files, $combined_genome_map_file[0]);
 	push (@combined_filter_unmap_files, $combined_genome_unmap_file);
+	
+	if ($config->getProperty("detect_novel") eq "no") {
+		if (scalar(@rc_files) == 1)	 {
+			# copy combined files (mapped, unmapped and survived) and change basename to input file basename
+			copy_files($rc_files[0], $combined_basename, \@combined_filter_map_files, \@combined_filter_unmap_files, \@known_mapped_files, \@known_unmapped_files, $combined_mature_survived_file,"", $combined_genome_survived_file);
+		} else {
+			# split combined files to input files using the mapping file
+			split_files($read_mapping_file, \@combined_filter_map_files, \@combined_filter_unmap_files, \@known_mapped_files, \@known_unmapped_files, $combined_mature_survived_file, "", $combined_genome_survived_file);
+		}
+	}
+	else {
+		# Novel results are survived (have been filtered)
+		my $combined_novel_survived_file = $dir_combined."novel/mapped/combined_genome_posNovel.map";
 
-	# Novel results are survived (have been filtered)
-	my $combined_novel_survived_file = $dir_combined."novel/mapped/combined_genome_posNovel.map";
-
-	if (scalar(@rc_files) == 1)	 {
-		# copy combined files (mapped, unmapped and survived) and change basename to input file basename
-		copy_files($rc_files[0], $combined_basename, \@combined_filter_map_files, \@combined_filter_unmap_files, \@known_mapped_files, 
+		if (scalar(@rc_files) == 1)	 {
+			# copy combined files (mapped, unmapped and survived) and change basename to input file basename
+			copy_files($rc_files[0], $combined_basename, \@combined_filter_map_files, \@combined_filter_unmap_files, \@known_mapped_files, 
 					\@known_unmapped_files, $combined_mature_survived_file, $combined_novel_survived_file, $combined_genome_survived_file);
-	} else {
-		# split combined files to input files using the mapping file
-		split_files($read_mapping_file, \@combined_filter_map_files, \@combined_filter_unmap_files, \@known_mapped_files, 
+		} else {
+			# split combined files to input files using the mapping file
+			split_files($read_mapping_file, \@combined_filter_map_files, \@combined_filter_unmap_files, \@known_mapped_files, 
 					\@known_unmapped_files, $combined_mature_survived_file, $combined_novel_survived_file, $combined_genome_survived_file);
+		}
 	}
 	print "done\n";
 #####
@@ -413,6 +441,19 @@ if (scalar(@input_files) > 0) {
 	check_status($res);
 #####
 
+##### perform pathway enrichment #####
+	print "..... perform pathway enrichment: ";
+	PathwayEnrichment::pathwayenrichment($output_dir, $path_data."/pathway/", $path_bin);
+	print "done\n";
+#####
+
+##### create output zip directory #####
+	print "..... perform output zip: ";
+	ExportResults::exportresults($output_dir);
+	print "done\n";
+#####
+
+
 	print "------------------------------------\n";
 	print "------ MAGI analysis finished ------\n";
 	print "------------------------------------\n";
@@ -465,7 +506,7 @@ sub aggregate_files {
 			my $id = $1;
 			foreach my $file (@files) {
 				my $basename = fileparse($file, ".map");
-				$basename =~ /^([^_]+_[^_]+)/;
+				$basename =~ /^([^_]+_.+)/;
 				$basename = $1;
 				$bound{$id}{$basename} = 0;
 				push (@samples, $basename) if ($flag);
@@ -480,7 +521,7 @@ sub aggregate_files {
 	# add read count number per sample per reference id
 	foreach my $file (@files) {
 		my $basename = fileparse($file, ".map");
-		$basename =~ /^([^_]+_[^_]+)/;
+		$basename =~ /^([^_]+_.+)/;
 		$basename = $1;
 	
 		open(IN, "<", $file) or return "Cannot open $file!\n";
