@@ -528,7 +528,7 @@ sub create_bowtie2_index {
 # input: 
 # output: 
 sub calculate_structure {
-	return (system("RNAfold -noPS < $_[0] > $_[1]") == 0);
+	return (system("RNAfold --noPS < $_[0] > $_[1]") == 0);
 }
 ##############################
 

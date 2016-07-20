@@ -1,4 +1,5 @@
-Backend code for MAGI web-based miRNA analysis pipeline.
+Backend code and modules that populate bin directory for running MAGI.
+Requires separate reference (data) directory.
 
 Kim, J., Levy, E., Ferbrache, A., Stepanowsky, P., Farcas, C., Wang, S., Brunner, S., Bath, T.,
  Wu, Y., Ohno-Machado, L. “MAGI: a Node.js web service for fast MicroRNA-Seq Analysis in a GPU Infrastructure.” 

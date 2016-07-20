@@ -285,18 +285,29 @@ if (scalar(@input_files) > 0) {
 	print "..... split combined files: ";
 	push (@combined_filter_map_files, $combined_genome_map_file[0]);
 	push (@combined_filter_unmap_files, $combined_genome_unmap_file);
+	
+	if ($config->getProperty("detect_novel") eq "no") {
+		if (scalar(@rc_files) == 1)	 {
+			# copy combined files (mapped, unmapped and survived) and change basename to input file basename
+			copy_files($rc_files[0], $combined_basename, \@combined_filter_map_files, \@combined_filter_unmap_files, \@known_mapped_files, \@known_unmapped_files, $combined_mature_survived_file,"", $combined_genome_survived_file);
+		} else {
+			# split combined files to input files using the mapping file
+			split_files($read_mapping_file, \@combined_filter_map_files, \@combined_filter_unmap_files, \@known_mapped_files, \@known_unmapped_files, $combined_mature_survived_file, "", $combined_genome_survived_file);
+		}
+	}
+	else {
+		# Novel results are survived (have been filtered)
+		my $combined_novel_survived_file = $dir_combined."novel/mapped/combined_genome_posNovel.map";
 
-	# Novel results are survived (have been filtered)
-	my $combined_novel_survived_file = $dir_combined."novel/mapped/combined_genome_posNovel.map";
-
-	if (scalar(@rc_files) == 1)	 {
-		# copy combined files (mapped, unmapped and survived) and change basename to input file basename
-		copy_files($rc_files[0], $combined_basename, \@combined_filter_map_files, \@combined_filter_unmap_files, \@known_mapped_files, 
+		if (scalar(@rc_files) == 1)	 {
+			# copy combined files (mapped, unmapped and survived) and change basename to input file basename
+			copy_files($rc_files[0], $combined_basename, \@combined_filter_map_files, \@combined_filter_unmap_files, \@known_mapped_files, 
 					\@known_unmapped_files, $combined_mature_survived_file, $combined_novel_survived_file, $combined_genome_survived_file);
-	} else {
-		# split combined files to input files using the mapping file
-		split_files($read_mapping_file, \@combined_filter_map_files, \@combined_filter_unmap_files, \@known_mapped_files, 
+		} else {
+			# split combined files to input files using the mapping file
+			split_files($read_mapping_file, \@combined_filter_map_files, \@combined_filter_unmap_files, \@known_mapped_files, 
 					\@known_unmapped_files, $combined_mature_survived_file, $combined_novel_survived_file, $combined_genome_survived_file);
+		}
 	}
 	print "done\n";
 #####
@@ -438,9 +449,10 @@ if (scalar(@input_files) > 0) {
 
 ##### create output zip directory #####
 	print "..... perform output zip: ";
-    ExportResults::exportresults($output_dir);
+	ExportResults::exportresults($output_dir);
 	print "done\n";
 #####
+
 
 	print "------------------------------------\n";
 	print "------ MAGI analysis finished ------\n";
@@ -494,7 +506,7 @@ sub aggregate_files {
 			my $id = $1;
 			foreach my $file (@files) {
 				my $basename = fileparse($file, ".map");
-				$basename =~ /^([^_]+_[^_]+)/;
+				$basename =~ /^([^_]+_.+)/;
 				$basename = $1;
 				$bound{$id}{$basename} = 0;
 				push (@samples, $basename) if ($flag);
@@ -509,7 +521,7 @@ sub aggregate_files {
 	# add read count number per sample per reference id
 	foreach my $file (@files) {
 		my $basename = fileparse($file, ".map");
-		$basename =~ /^([^_]+_[^_]+)/;
+		$basename =~ /^([^_]+_.+)/;
 		$basename = $1;
 	
 		open(IN, "<", $file) or return "Cannot open $file!\n";

@@ -1,7 +1,6 @@
-# 9/6/2013
-# Author: Eric Levy
-# Test command:
-# perl -MPathwayEnrichment -e'PathwayEnrichment::pathwayenrichment("/storage/magi/6a51a039e5363dba7f4802fc88678f0a947389ce/", "../data/pathway/", "./");'
+
+# Test command
+#perl -MPathwayEnrichment -e'PathwayEnrichment::pathwayenrichment("/storage/magi/6a51a039e5363dba7f4802fc88678f0a947389ce/", "../data/pathway/", "./");'
 
 #!/usr/bin/perl
 package PathwayEnrichment;
@@ -26,10 +25,10 @@ sub pathwayenrichment {
 	print $bin_dir."\n";
 
 	my $novel_target_input = $output_dir."visualization/target/novel_vs_genes.txt";
-	open my $input_mir, '<', $novel_target_input;
+	my $mir_open = (open my $input_mir, '<', $novel_target_input);
 
 	my $precursor_input = $output_dir."combined/novel/probs_precursors.txt";
-	open my $input_prec, '<', $precursor_input;
+	my $prec_open = (open my $input_prec, '<', $precursor_input);
 
 	my $genes_ref_input = $data_dir."microtcds_targets_intersect_unique.txt";
 	open my $genes_ref, '<', $genes_ref_input;
@@ -69,7 +68,7 @@ sub pathwayenrichment {
 	my $target_num = 0;
 	my @target_mirs = ();
 	#my @targets = ();
-	while ( <$input_prec> )
+	while ( $prec_open && <$input_prec> )
 	{
 		chomp;
 		my (@columns) = split /\s+/, $_;
@@ -87,7 +86,7 @@ sub pathwayenrichment {
 	my $n1 = 0;
 	my $n2 = 0;
 	#my @targets = ();
-	while ( <$input_mir> )
+	while ( $mir_open && <$input_mir> )
 	{
 		chomp;
 		my (@columns) = split /\s+/, $_;
@@ -125,7 +124,7 @@ sub pathwayenrichment {
 	open my $known_diff, '<', $known_diff_input;
 
 	my $novel_diff_input = $output_dir."novel/diff_expr/Group_g1_over_Group_g2_DESeq.txt";
-	open my $novel_diff, '<', $novel_diff_input; 
+	my $novel_open = (open my $novel_diff, '<', $novel_diff_input); 
 
 	my $known_top_output = $pathway_dir."known_top.txt";
 	open my $known_top_genes, '>', $known_top_output;
@@ -146,7 +145,7 @@ sub pathwayenrichment {
 	my @input_mirs = ();
 	#my @targets = ();
 	my @novel = ();
-	while ( <$novel_diff> )
+	while ( $novel_open && <$novel_diff> )
 	{
 		chomp;
 		my (@columns) = split /\s+/, $_;
