@@ -1,6 +1,7 @@
-
-# Test command
-#perl -MPathwayEnrichment -e'PathwayEnrichment::pathwayenrichment("/storage/magi/6a51a039e5363dba7f4802fc88678f0a947389ce/", "../data/pathway/", "./");'
+# 9/6/2013
+# Author: Eric Levy
+# Test command:
+# perl -MPathwayEnrichment -e'PathwayEnrichment::pathwayenrichment("/storage/magi/6a51a039e5363dba7f4802fc88678f0a947389ce/", "../data/pathway/", "./");'
 
 #!/usr/bin/perl
 package PathwayEnrichment;

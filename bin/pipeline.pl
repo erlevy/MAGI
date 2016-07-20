@@ -18,6 +18,7 @@ use TargetPred;
 use DiffExpr;
 use PrepareResult;
 use PathwayEnrichment;
+use ExportResults;
 
 my $usage = << "USAGE";
 Description: 
@@ -160,10 +161,19 @@ if (scalar(@input_files) > 0) {
 	my @combined_filter_map_files = ();
 	my @combined_filter_unmap_files = ();
 	if ($config->getProperty("filter_reads") eq "yes") {
-		# get all possible filter criteria
+		# get original filter criteria and directory names
 		opendir (DIR, $path_species."exclusioncriteria") or check_status("Cannot open species directory: $path_species\n");
-		# get directory names of all filter criteria
 		my @filter_dirs = readdir(DIR);
+		
+		# add extra exclusion criteria if directory exists in output_dir
+		if (-d $output_dir."exclusion") {
+			opendir (DIR2, $output_dir."exclusion") or check_status("Cannot open species directory: $output_dir\n");
+			push (@filter_dirs, readdir(DIR2));
+			my $res = system("bowtie2-build $output_dir"."exclusion/xclusionRNA/xclusionRNA.fa $output_dir"."exclusion/xclusionRNA/xclusionRNA");
+			$file_indexes{"xclusionRNA"} = $output_dir."exclusion/xclusionRNA/xclusionRNA";
+			closedir (DIR2);
+		}
+		
 		# loop over each filter criteria
 		print "\n";
 		foreach my $dir_filter_name (@filter_dirs) {
@@ -171,8 +181,14 @@ if (scalar(@input_files) > 0) {
 				print "     \t".$dir_filter_name.": ";
 				# if there is a known index of the certain criteria available, align to filter sequences (information collected by testing databases)
 				if (exists $file_indexes{$dir_filter_name}) {
-					my $res = Aligner::map(\@combined_genome_map_file, $file_indexes{$dir_filter_name}, $dir_filter_name, $dir_combined, $config->getProperty($dir_filter_name."_mismatches"), "--norc");
-					check_status($res);
+					if ($dir_filter_name ne "xclusionRNA") {
+						my $res = Aligner::map(\@combined_genome_map_file, $file_indexes{$dir_filter_name}, $dir_filter_name, $dir_combined, $config->getProperty($dir_filter_name."_mismatches"), "--norc");
+						check_status($res);
+					} else {
+						my $res = Aligner::map(\@combined_genome_map_file, $file_indexes{$dir_filter_name}, $dir_filter_name, $dir_combined, "1", "--norc");
+						check_status($res);					
+					}
+					
 					# save file name information to know filter mapping files
 					push (@combined_filter_map_files, $dir_combined."mapped/".$combined_basename."_genome_".$dir_filter_name.".map");
 					push (@combined_filter_unmap_files, $dir_combined."unmapped/".$combined_basename."_genome_".$dir_filter_name.".rc");
@@ -417,6 +433,12 @@ if (scalar(@input_files) > 0) {
 ##### perform pathway enrichment #####
 	print "..... perform pathway enrichment: ";
 	PathwayEnrichment::pathwayenrichment($output_dir, $path_data."/pathway/", $path_bin);
+	print "done\n";
+#####
+
+##### create output zip directory #####
+	print "..... perform output zip: ";
+    ExportResults::exportresults($output_dir);
 	print "done\n";
 #####
 
