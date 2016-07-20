@@ -1,9 +1,7 @@
 Backend code and modules that populate bin directory for running MAGI.
 Requires separate reference (data) directory.
 
-Kim, J., Levy, E., Ferbrache, A., Stepanowsky, P., Farcas, C., Wang, S., Brunner, S., Bath, T.,
- Wu, Y., Ohno-Machado, L. “MAGI: a Node.js web service for fast MicroRNA-Seq Analysis in a GPU Infrastructure.” 
- Bioinformatics 30(19) (2014): 2926-2827.
+Kim, J., Levy, E., Ferbrache, A., Stepanowsky, P., Farcas, C., Wang, S., Brunner, S., Bath, T., Wu, Y., Ohno-Machado, L. “MAGI: a Node.js web service for fast MicroRNA-Seq Analysis in a GPU Infrastructure.” Bioinformatics 30(19) (2014): 2926-2827.
  
 Perl code primarily written by Petra Stepanowsky. CUDAMiranda written by Shuang Wang.
 Pathway enrichment module written by Eric Levy.
@@ -11,5 +9,4 @@ Pipeline finalized by Jihoon Kim and Eric Levy.
 
 Novel miRNA prediction developed by Petra Stepanowsky, further developed and tested by Eric Levy.
 
-Stepanowsky, P., Levy, E., Kim, J., Jiang, X., Ohno-Machado, L. “Prediction of microRNA precursors using parsimonious feature sets.” 
-Cancer Informatics Suppl. 1 (2014): 95-102. 
+Stepanowsky, P., Levy, E., Kim, J., Jiang, X., Ohno-Machado, L. “Prediction of microRNA precursors using parsimonious feature sets.” Cancer Informatics Suppl. 1 (2014): 95-102. 
