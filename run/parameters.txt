@@ -4,7 +4,7 @@
 ##### Specified Input #####
 input: - 
 dir: MAGI/example_run/
-files: MAGI/input/A_3540.rc MAGI/input/A_3565.rc MAGI/input/A_3580.rc MAGI/input/C_3540.rc MAGI/input/C_3565.rc MAGI/input/C_3580.rc
+files: MAGI/input/g1_1.rc MAGI/input/g1_2.rc MAGI/input/g1_3.rc MAGI/input/g2_1.rc MAGI/input/g2_2.rc MAGI/input/g2_3.rc
 diff_expr_known = yes
 diff_expr_novel = yes
 predict_novel = yes
