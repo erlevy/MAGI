@@ -5,6 +5,8 @@
 input: - 
 dir: MAGI/example_run/
 files: MAGI/input/g1_1.rc MAGI/input/g1_2.rc MAGI/input/g1_3.rc MAGI/input/g2_1.rc MAGI/input/g2_2.rc MAGI/input/g2_3.rc
+filter_reads = yes
+detect_known = yes
 diff_expr_known = yes
 diff_expr_novel = yes
 predict_novel = yes
