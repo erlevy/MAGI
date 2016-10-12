@@ -3,8 +3,8 @@
 ######################################################
 ##### Specified Input #####
 input: - 
-dir: /storage/home/elevy/magi_pipeline/run/example_run/
-files: /storage/home/elevy/magi_pipeline/run/example_input/A_3540.rc /storage/home/elevy/magi_pipeline/run/example_input/A_3565.rc /storage/home/elevy/magi_pipeline/run/example_input/A_3580.rc /storage/home/elevy/magi_pipeline/run/example_input/C_3540.rc /storage/home/elevy/magi_pipeline/run/example_input/C_3565.rc /storage/home/elevy/magi_pipeline/run/example_input/C_3580.rc
+dir: MAGI/example_run/
+files: MAGI/input/A_3540.rc MAGI/input/A_3565.rc MAGI/input/A_3580.rc MAGI/input/C_3540.rc MAGI/input/C_3565.rc MAGI/input/C_3580.rc
 diff_expr_known = yes
 diff_expr_novel = yes
 predict_novel = yes
